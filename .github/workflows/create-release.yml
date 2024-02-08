@@ -55,7 +55,7 @@ jobs:
       if: steps.check-release.outputs.new_tag != ''
       run: |
         NEW_TAG=${{ steps.check-release.outputs.new_tag }}
-        COMMIT_MESSAGE=${{ steps.get-latest-commit.outputs.latest_commit_message }}
+        COMMIT_MESSAGE="${{ steps.get-latest-commit.outputs.latest_commit_message }}"
         COMMIT_HASH=${{ steps.get-latest-commit.outputs.latest_commit_hash }}
         BODY="{\"tagName\": \"$NEW_TAG\", \"name\": \"$NEW_TAG\", \"body\": \"$COMMIT_MESSAGE\", \"targetCommitish\": \"$COMMIT_HASH\"}"
         curl -X POST "https://altinn.studio/designer/api/digdir/nlunde-test/releases" -d "$BODY"
