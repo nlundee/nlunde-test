@@ -43,10 +43,13 @@ jobs:
       run: |
         if [ "${{ steps.parse-release.outputs.commitish }}" != "${{ steps.get-latest-commit.outputs.latest_commit_hash }}" ]; then
           NEW_TAG=$(( ${{ steps.parse-release.outputs.tag_name }} + 1 ))
+          echo "New release will be created with tag: $NEW_TAG"
           echo "::set-output name=new_tag::$NEW_TAG"
         else
-          echo "No new release needed"
-          echo "exit 1"
+          echo "No new release needed."
+          echo "::set-output name=new_tag::"
+          exit 0
+        fi
 
     - name: Create New Release in Gitea
       if: steps.check-release.outputs.new_tag != ''
