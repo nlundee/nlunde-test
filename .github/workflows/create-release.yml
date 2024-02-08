@@ -1,7 +1,6 @@
-name: Create Release in Gitea
+name: Create Release in Altinn Studio
 
-# Triggered manually or by other events such as workflow_run
-on: 
+on:
   workflow_dispatch:
   workflow_run:
     workflows: ["Mirror to Gitea"]
@@ -11,6 +10,7 @@ on:
 jobs:
   create-release:
     runs-on: ubuntu-latest
+
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -19,17 +19,14 @@ jobs:
       id: get-release
       run: |
         RESPONSE=$(curl -s "https://altinn.studio/designer/api/digdir/nlunde-test/releases")
-        echo "##[set-output name=response;]$RESPONSE"
+        echo "::set-output name=response::$RESPONSE"
 
     - name: Parse Response and Get Latest Release Number
-      id: parse-response
+      id: parse-release
       run: |
-        RESPONSE="${{ steps.get-release.outputs.response }}"
-        LATEST_RELEASE=$(echo $RESPONSE | jq '[.results[] | select(.build.status == "completed")] | max_by(.tagName | tonumber)') 
+        LATEST_RELEASE=$(echo '${{ steps.get-release.outputs.response }}' | jq '[.results[] | select(.build.status == "completed")] | max_by(.tagName | tonumber)')
         TAG_NAME=$(echo $LATEST_RELEASE | jq -r '.tagName')
         COMMITISH=$(echo $LATEST_RELEASE | jq -r '.targetCommitish')
-        echo "Latest tag: $TAG_NAME"
-        echo "Latest commitish: $COMMITISH"
         echo "::set-output name=tag_name::$TAG_NAME"
         echo "::set-output name=commitish::$COMMITISH"
 
@@ -38,17 +35,14 @@ jobs:
       run: |
         LATEST_COMMIT_HASH=$(git rev-parse HEAD)
         LATEST_COMMIT_MESSAGE=$(git log -1 --pretty=%B)
-        echo "Latest commit hash: $LATEST_COMMIT_HASH"
-        echo "Latest commit message: $LATEST_COMMIT_MESSAGE"
         echo "::set-output name=latest_commit_hash::$LATEST_COMMIT_HASH"
         echo "::set-output name=latest_commit_message::$LATEST_COMMIT_MESSAGE"
 
     - name: Check if New Release is Needed
       id: check-release
       run: |
-        if [ "${{ steps.parse-response.outputs.commitish }}" != "${{ steps.get-latest-commit.outputs.latest_commit_hash }}" ]; then
-          NEW_TAG=$(( ${{ steps.parse-response.outputs.tag_name }} + 1 ))
-          echo "Creating new release with tag: $NEW_TAG"
+        if [ "${{ steps.parse-release.outputs.commitish }}" != "${{ steps.get-latest-commit.outputs.latest_commit_hash }}" ]; then
+          NEW_TAG=$(( ${{ steps.parse-release.outputs.tag_name }} + 1 ))
           echo "::set-output name=new_tag::$NEW_TAG"
         else
           echo "No new release needed"
